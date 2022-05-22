@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { ForbiddenException, Injectable } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
 import { AuthDto } from "./dto";
 import * as argon from 'argon2'
@@ -7,7 +7,7 @@ import * as argon from 'argon2'
 export class AuthService {
     constructor(private primsa: PrismaService) {}
 
-    async signup(dto: AuthDto) {
+    async signup(dto: AuthDto): Promise<AuthDto> {
         const hash = await argon.hash(dto.password)
 
         const user = await this.primsa.user.create({
@@ -22,7 +22,24 @@ export class AuthService {
         return user
     }
 
-    login() {
-        return {'message': 'log in here....'}
+    async login(dto: AuthDto): Promise<AuthDto> {
+        const user = await this.primsa.user.findUnique({
+            where: {
+                email: dto.email,
+            }
+        })
+
+        if (!user) {
+            throw new ForbiddenException('Incorrect Credentials...')
+        }
+
+        const isPasswordMatch = await argon.verify(user.password, dto.password)
+
+        if (!isPasswordMatch) {
+            throw new ForbiddenException('Incorrect Credentials...')
+        }
+
+        delete user.password
+        return user
     }
 }
