@@ -88,6 +88,7 @@ describe("App e2e", () => {
         .withBody(dto)
         .expectStatus(200)
         .inspect()
+        .stores("userAccessToken", "access_token")
       })
 
       it("should throw if email empty", () => {
@@ -128,7 +129,24 @@ describe("App e2e", () => {
 
   describe("User", () => {
     describe("Get details", () => {
+      it("should get detail", () => {
+        return pactum
+        .spec()
+        .get("/users/details")
+        .withHeaders({
+          "Authorization": "Bearer $S{userAccessToken}"
+        })
+        .expectStatus(200)
+        .inspect()
+      })
 
+      it("Unauthorized when missing access token", () => {
+        return pactum
+        .spec()
+        .get("/users/details")
+        .expectStatus(401)
+        .inspect()
+      })
     })
 
     describe("Edit user", () => {
