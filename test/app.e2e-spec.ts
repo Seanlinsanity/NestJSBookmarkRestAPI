@@ -5,6 +5,7 @@ import { AppModule } from "../src/app.module"
 import * as pactum from "pactum";
 import { AuthDto } from "src/auth/dto";
 import { EditUserDto } from "src/user/dto";
+import { CreateBookmarkDto, EditBookmarkDto } from "src/bookmark/dto";
 
 describe("App e2e", () => {
   let app: INestApplication;
@@ -174,25 +175,106 @@ describe("App e2e", () => {
 
   describe("Bookmark", () => {
     describe("Create bookmark", () => {
+      const dto: CreateBookmarkDto = {
+        title: "this is the title",
+        link: "https://www.apple.com.tw"
+      }
 
+      it("should create bookmark", () => {
+        return pactum
+        .spec()
+        .post("/bookmarks")
+        .withHeaders({
+          "Authorization": "Bearer $S{userAccessToken}"
+        })
+        .withBody(dto)
+        .expectStatus(201)
+        .stores("bookmarkId", "id")
+        .inspect()
+      })
     })
 
     describe("Get bookmarks", () => {
-
+      it("should get bookmarks", () => {
+        return pactum
+        .spec()
+        .get("/bookmarks")
+        .withHeaders({
+          "Authorization": "Bearer $S{userAccessToken}"
+        })
+        .expectStatus(200)
+        .expectJsonLength(1)
+        .inspect()
+      })
     })
 
     describe("Get bookmark by id", () => {
-
+      it("should get bookmark by id", () => {
+        return pactum
+        .spec()
+        .get("/bookmarks/{id}")
+        .withPathParams("id", "$S{bookmarkId}")
+        .withHeaders({
+          "Authorization": "Bearer $S{userAccessToken}"
+        })
+        .expectStatus(200)
+        .expectBodyContains("$S{bookmarkId}")
+        .inspect()
+      })
     })
 
     describe("Edit bookmark", () => {
+      const dto: EditBookmarkDto = {
+        title: "New title",
+        link: "https://www.google.com.tw",
+        description: "New desciption here..."
+      }
 
+      it("should edit bookmark", () => {
+        return pactum
+        .spec()
+        .patch("/bookmarks/{id}")
+        .withPathParams("id", "$S{bookmarkId}")
+        .withHeaders({
+          "Authorization": "Bearer $S{userAccessToken}"
+        })
+        .withBody(dto)
+        .expectStatus(200)
+        .expectBodyContains("$S{bookmarkId}")
+        .expectBodyContains(dto.title)
+        .expectBodyContains(dto.description)
+        .expectBodyContains(dto.link)
+        .inspect()
+      })
     })
 
-    describe("Delete bookmark", () => {
+    describe("Delete bookmark by id", () => {
+      it("should delet bookmark by id", () => {
+        return pactum
+        .spec()
+        .delete("/bookmarks/{id}")
+        .withPathParams("id", "$S{bookmarkId}")
+        .withHeaders({
+          "Authorization": "Bearer $S{userAccessToken}"
+        })
+        .expectStatus(204)
+        .inspect()
+      })
 
+      describe("Get bookmarks", () => {
+        it("should get bookmarks", () => {
+          return pactum
+          .spec()
+          .get("/bookmarks")
+          .withHeaders({
+            "Authorization": "Bearer $S{userAccessToken}"
+          })
+          .expectStatus(200)
+          .expectJsonLength(0)
+          .inspect()
+        })
+      })
     })
   })
 
-  it.todo('should pass')
 })
